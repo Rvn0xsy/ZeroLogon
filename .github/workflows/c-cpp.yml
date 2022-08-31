@@ -1,0 +1,73 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build-Zerologon-On-Windows-2019
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+
+on:
+  push:
+    branches: [ main ]
+    tags: 
+      - 'v*'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  Build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1.4.1
+    
+    - name: Compile x86 Program
+      working-directory: ./Zerologon/
+      run: msbuild /p:configuration=release /p:platform=x86 Zerologon.vcxproj
+      
+    - name: Compile x64 Program
+      working-directory: ./Zerologon/
+      run: msbuild /p:configuration=release /p:platform=x64 Zerologon.vcxproj
+      
+    - name: pack x86 zip
+      working-directory: ./Zerologon/
+      shell: powershell
+      run: Compress-Archive -Path "Release\Zerologon.exe" -DestinationPath "C:\ZeroLogonX86.zip"
+      
+    - name: pack x64 zip
+      working-directory: ./Zerologon/
+      shell: powershell
+      run: Compress-Archive -Path "x64\Release\Zerologon.exe" -DestinationPath  "C:\ZeroLogonX64.zip"
+      
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@latest
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Zerologon Release ${{ github.ref }}
+        body: |
+          Automated Release by GitHub Action CI
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset (x64)
+      id: upload-release-asset-x64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: C:\ZeroLogonX64.zip
+        asset_name: ZeroLogonX64.zip
+        asset_content_type: application/zip
+    - name: Upload Release Asset (x86)
+      id: upload-release-asset-x86
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: C:\ZeroLogonX86.zip
+        asset_name: ZeroLogonX86.zip
+        asset_content_type: application/zip
