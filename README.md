@@ -1,5 +1,5 @@
 # ZeroLogon
-CVE-2020-1472 C++
+CVE-2020-1472 C++版本，此工具会直接重置机器账户的密码，无具备恢复功能，实战场景中慎用。
 
 ![Example](./img/example.png)
 
